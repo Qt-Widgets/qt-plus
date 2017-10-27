@@ -134,6 +134,9 @@ public:
             , m_iPreviousColumn(0)
             , m_bParsingFloat(false)
             , m_bParsingHexa(false)
+            , m_bLineEmpty(true)
+            , m_bPreviousLineEmpty(true)
+            , m_bDocComment(false)
         {
         }
 
@@ -146,6 +149,9 @@ public:
             , m_iPreviousColumn(0)
             , m_bParsingFloat(false)
             , m_bParsingHexa(false)
+            , m_bLineEmpty(true)
+            , m_bPreviousLineEmpty(true)
+            , m_bDocComment(false)
         {
             QFile fInputFile(pFile->fileName());
 
@@ -189,6 +195,9 @@ public:
         int                 m_iCommentLevel;
         bool                m_bParsingFloat;
         bool                m_bParsingHexa;
+        bool                m_bLineEmpty;
+        bool                m_bPreviousLineEmpty;
+        bool                m_bDocComment;
     };
 
     //-------------------------------------------------------------------------------------------------
@@ -340,7 +349,7 @@ protected:
     QStack<QMLScope*>       m_sScopes;
     QJSEngine               m_eEngine;
     QString                 m_sText;
-    QString                 m_sBeautifyScript;
+    // QString                 m_sBeautifyScript;
     bool                    m_bIncludeImports;
 };
 

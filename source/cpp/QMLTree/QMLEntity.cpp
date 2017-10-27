@@ -4,6 +4,13 @@
 
 // Application
 #include "QMLEntity.h"
+#include "QMLBinaryOperation.h"
+#include "QMLUnaryOperation.h"
+#include "QMLQualifiedExpression.h"
+#include "QMLPropertyAssignment.h"
+#include "QMLVariableDeclaration.h"
+#include "QMLFor.h"
+#include "QMLForIn.h"
 
 //-------------------------------------------------------------------------------------------------
 
@@ -72,6 +79,7 @@ void QMLFormatter::processFragment(QTextStream& stream, EQMLFormatterFragment fr
         case qffBeforeFor:
         case qffBeforeWhile:
         case qffBeforeSwitch:
+        case qffBeforeIf:
             writeDoubleNewLine(stream);
             break;
 
@@ -87,7 +95,6 @@ void QMLFormatter::processFragment(QTextStream& stream, EQMLFormatterFragment fr
         case qffBeforePropertyName:
         case qffBeforeVariableDeclaration:
         case qffBeforeFunctionCall:
-        case qffBeforeIf:
         case qffBeforeTopLevelBinaryOp:
         case qffBeforeTopLevelUnaryOp:
         case qffBeforeQualifiedExpression:
@@ -369,6 +376,24 @@ void QMLEntity::solveSymbolUsages(QMLTreeContext* pContext)
 //-------------------------------------------------------------------------------------------------
 
 /*!
+    Sorts entities. \br\br
+*/
+void QMLEntity::sortContents()
+{
+    QMap<QString, QMLEntity*> mMembers = members();
+
+    foreach (QString sMemberKey, mMembers.keys())
+    {
+        if (mMembers[sMemberKey] != nullptr)
+        {
+            mMembers[sMemberKey]->sortContents();
+        }
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
     Returns a list of all declared symbols.
     This is used by the parser for symbol resolution, there is no need to call it from anywhere else.
 */
@@ -497,6 +522,8 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
     CXMLNode xNode(metaObject()->className());
     QString sValue = m_vValue.value<QString>();
 
+    xNode.attributes()["Position"] = QString("<%1, %2>").arg(m_pPosition.x()).arg(m_pPosition.y());
+
     if (sValue.isEmpty() == false)
     {
         xNode.attributes()["Value"] = sValue;
@@ -561,6 +588,58 @@ QString QMLEntity::listAsQualifiedName(const QStringList& sNameList)
     }
 
     return sReturnValue;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool QMLEntity::isContainer(const QMLEntity* pEntity)
+{
+    if (pEntity != nullptr)
+    {
+        if (dynamic_cast<const QMLQualifiedExpression*>(pEntity) != nullptr)
+            return false;
+
+        if (dynamic_cast<const QMLUnaryOperation*>(pEntity) != nullptr)
+            return false;
+
+        if (dynamic_cast<const QMLBinaryOperation*>(pEntity) != nullptr)
+            return false;
+
+        if (dynamic_cast<const QMLComplexEntity*>(pEntity) != nullptr)
+            return true;
+    }
+
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool QMLEntity::isPropertyAssignment(const QMLEntity* pEntity)
+{
+    if (dynamic_cast<const QMLPropertyAssignment*>(pEntity) != nullptr)
+        return true;
+
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool QMLEntity::isVariableDeclaration(const QMLEntity* pEntity)
+{
+    if (dynamic_cast<const QMLVariableDeclaration*>(pEntity) != nullptr)
+        return true;
+
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+bool QMLEntity::isFor(const QMLEntity* pEntity)
+{
+    if (dynamic_cast<const QMLFor*>(pEntity) != nullptr || dynamic_cast<const QMLForIn*>(pEntity) != nullptr)
+        return true;
+
+    return false;
 }
 
 //-------------------------------------------------------------------------------------------------

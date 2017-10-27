@@ -1,4 +1,7 @@
 
+// Qt
+#include <QDebug>
+
 // Application
 #include "QMLFile.h"
 #include "QMLPragma.h"
@@ -47,6 +50,10 @@ QMLFile::QMLFile(const QMLFile& target)
 */
 QMLFile::~QMLFile()
 {
+    foreach (QMLComment* pComment, m_vComments)
+    {
+        delete pComment;
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -72,6 +79,16 @@ QString QMLFile::fileName() const
 //-------------------------------------------------------------------------------------------------
 
 /*!
+    Returns the file's comments.
+*/
+QVector<QMLComment*>& QMLFile::comments()
+{
+    return m_vComments;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
     Returns the parsed flag.
 */
 bool QMLFile::parsed() const
@@ -87,6 +104,157 @@ bool QMLFile::parsed() const
 bool QMLFile::isSingleton() const
 {
     return m_bIsSingleton;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
+    Inserts comments stored in m_vComments where they should reside in the entity tree.
+*/
+void QMLFile::solveComments()
+{
+    for (int index = 0; index < m_vComments.count(); index++)
+    {
+        QMLComment* pComment = m_vComments[index];
+
+        if (pComment->type() == QMLComment::ctMultiLine || pComment->type() == QMLComment::ctMultiLineDoc)
+        {
+            QMLEntity* pTarget = locateEntityAtOrAfterLine(pComment->position());
+
+            if (pTarget != nullptr)
+            {
+                QMLComplexEntity* pComplexParent = dynamic_cast<QMLComplexEntity*>(pTarget->parent());
+
+                if (pComplexParent != nullptr)
+                {
+                    int entityIndex = pComplexParent->contents().indexOf(pTarget);
+
+                    if (entityIndex != -1)
+                    {
+                        pComplexParent->contents().insert(entityIndex, pComment);
+                        m_vComments.removeAt(index);
+                        index--;
+                    }
+                    else
+                    {
+                        qWarning() << QString("QMLFile::solveComments() : no valid index for comment at line %1").arg(pComment->position().y() + 1);
+                    }
+                }
+                else
+                {
+                    qWarning() << QString("QMLFile::solveComments() : no parent entity found for comment at line %1").arg(pComment->position().y() + 1);
+                }
+            }
+            else
+            {
+                qWarning() << QString("QMLFile::solveComments() : no entity found for comment at line %1").arg(pComment->position().y() + 1);
+            }
+        }
+        else
+        {
+            QMLEntity* pTarget = locateEntityAtOrAfterLine(pComment->position());
+
+            if (pTarget != nullptr)
+            {
+                QMLComplexEntity* pComplexParent = dynamic_cast<QMLComplexEntity*>(pTarget->parent());
+
+                if (pComplexParent != nullptr)
+                {
+                    int entityIndex = pComplexParent->contents().indexOf(pTarget);
+
+                    if (entityIndex != -1)
+                    {
+                        if (pComment->type() == QMLComment::ctSingleLine)
+                        {
+                            pComplexParent->contents().insert(entityIndex, pComment);
+                        }
+                        else
+                        {
+                            pComplexParent->contents().insert(entityIndex + 1, pComment);
+                        }
+
+                        m_vComments.removeAt(index);
+                        index--;
+                    }
+                    else
+                    {
+                        qWarning() << QString("QMLFile::solveComments() : no valid index for comment at line %1").arg(pComment->position().y() + 1);
+                    }
+                }
+                else
+                {
+                    qWarning() << QString("QMLFile::solveComments() : no parent entity found for comment at line %1").arg(pComment->position().y() + 1);
+                }
+            }
+            else
+            {
+                qWarning() << QString("QMLFile::solveComments() : no entity found for comment at line %1").arg(pComment->position().y() + 1);
+            }
+        }
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
+    Locates an entity at a line specified by \a pPosition (the y component).
+*/
+QMLEntity* QMLFile::locateEntityAtOrAfterLine(const QPoint& pPosition)
+{
+    return locateEntityAtOrAfterLine_Recurse(this, pPosition);
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
+    Recursive part of locateEntityAtOrAfterLine. \br\br
+    \a pEntity is the current entity to process. \br
+    \a pPosition is the line to check (the y component).
+*/
+QMLEntity* QMLFile::locateEntityAtOrAfterLine_Recurse(QMLEntity* pEntity, const QPoint& pPosition)
+{
+    // Continue only if the current entity is not a comment
+    if (dynamic_cast<QMLComment*>(pEntity) == nullptr)
+    {
+        // If the line of the current entity is greater or equal to the specified line, return the current entity.
+        // if (dynamic_cast<QMLComplexEntity*>(pEntity) != nullptr && pEntity->position().y() >= pPosition.y())
+        if (pEntity->position().y() >= pPosition.y())
+        {
+            return pEntity;
+        }
+
+        // Look in the members of the current entity, if any
+        QMap<QString, QMLEntity*> mMembers = pEntity->members();
+
+        foreach (QString sMemberKey, mMembers.keys())
+        {
+            QMLEntity* pChildEntity = mMembers[sMemberKey];
+
+            if (pChildEntity != nullptr)
+            {
+                QMLEntity* pFoundEntity = locateEntityAtOrAfterLine_Recurse(pChildEntity, pPosition);
+
+                if (pFoundEntity != nullptr)
+                    return pFoundEntity;
+            }
+        }
+
+        // Look in the children of the current entity, if it is a QMLComplexEntity
+        QMLComplexEntity* pComplex = dynamic_cast<QMLComplexEntity*>(pEntity);
+
+        if (pComplex != nullptr)
+        {
+            foreach (QMLEntity* pChildEntity, pComplex->contents())
+            {
+                QMLEntity* pFoundEntity = locateEntityAtOrAfterLine_Recurse(pChildEntity, pPosition);
+
+                if (pFoundEntity != nullptr)
+                    return pFoundEntity;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -169,6 +337,11 @@ CXMLNode QMLFile::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent)
     if (m_bIsSingleton)
     {
         xNode.attributes()["Singleton"] = "true";
+    }
+
+    foreach (QMLComment* pComment, m_vComments)
+    {
+        xNode << pComment->toXMLNode(pContext, this);
     }
 
     return xNode;
