@@ -42,15 +42,21 @@ public:
         qffAfterPropertyContent,
         qffBeforeFunction,
         qffAfterFunction,
+        qffBeforeSignal,
+        qffAfterSignal,
         qffBeforeVariableDeclaration,
         qffBeforeFunctionCall,
         qffAfterFunctionCall,
+        qffBeforeForNoPreviousSibling,
         qffBeforeFor,
         qffAfterFor,
         qffBeforeWhile,
+        qffBeforeWhileNoPreviousSibling,
         qffAfterWhile,
+        qffBeforeSwitchNoPreviousSibling,
         qffBeforeSwitch,
         qffAfterSwitch,
+        qffBeforeIfNoPreviousSibling,
         qffBeforeIf,
         qffAfterIf,
         qffBeforeTopLevelBinaryOp,
@@ -139,6 +145,9 @@ public:
     //! Returns all members
     virtual QMap<QString, QMLEntity*> members();
 
+    //!
+    QMLEntity* previousSibling() const;
+
     //-------------------------------------------------------------------------------------------------
     // Control methods
     //-------------------------------------------------------------------------------------------------
@@ -208,6 +217,9 @@ public:
 
     //!
     static bool isFor(const QMLEntity* pEntity);
+
+    //!
+    static bool isComment(const QMLEntity* pEntity);
 
     //!
     static int entityCount();

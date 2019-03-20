@@ -1,9 +1,10 @@
-import QtQuick 2.4
-import QtQuick.Controls 1.4
-import QtQuick.Dialogs 1.0 as MyLib
+
+import QtQuick 2.4                      // QtQuick
+import QtQuick.Controls 1.4             // QtQuick.Controls
+import QtQuick.Dialogs 1.0 as MyLib     // QtQuick.Dialogs
 
 Item {
-    id: root
+    id: root                                                                                    // Root
 
     property real prop1: root.prop8
     property real prop_2: 20                                                                    // Camel casing error
@@ -11,8 +12,6 @@ Item {
     property real prop4: 40
     property real Prop5: 50                                                                     // Camel casing error and unreferenced symbol
     property bool prop6: prop1 > 0 ? prop1 : prop_2 > 0 ? prop_2 : prop3 > 0 ? prop3 : prop4    // Nested conditionals error
-    property variant prop7: []                                                                  // Unreferenced symbol
-    property int prop8: 88
 
     property string property: ""
 
@@ -32,6 +31,9 @@ Item {
             }
         }
     ]
+
+    property variant prop7: []                                                                  // Unreferenced symbol
+    property int prop8: 88
 
     function func1(someParameter1, someParameter2) {
         // Comment 1
@@ -82,7 +84,10 @@ Item {
         }
     }
 
-    function func3(someParameter1) {                        // Unreferenced parameter
+    //-----------------------------------------------------------------------------
+    // Unreferenced parameter
+    // Single line comment
+    function func3(someParameter1) {
         return { x: 0, y: 0 }
     }
 
@@ -105,8 +110,27 @@ Item {
             // Comment 7
             for (var i = 0; i < item.children.length; i++)
             {
-                getVisibleItemListRecurse(complexItems, item.children[i], level + 1);
+                var returnValue = getVisibleItemListRecurse(complexItems, item.children[i], level + 1);
+
+                if (returnValue !== null)
+                    return returnValue;
             }
+        }
+
+        return null;
+    }
+
+    function Func4()
+    {
+        while (true)
+        {
+            var foo1 = 1;
+            var bar1 = foo1;
+        }
+        while (true)
+        {
+            var foo2 = 1;
+            var bar2 = foo2;
         }
     }
 }

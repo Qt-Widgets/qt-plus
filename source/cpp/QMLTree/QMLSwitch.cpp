@@ -61,44 +61,26 @@ void QMLSwitch::toQML(QTextStream& stream, QMLFormatter& formatter, const QMLEnt
 {
     Q_UNUSED(pParent);
 
-    formatter.processFragment(stream, QMLFormatter::qffBeforeSwitch);
+    if (previousSibling() == nullptr)
+        formatter.processFragment(stream, QMLFormatter::qffBeforeSwitchNoPreviousSibling);
+    else
+        formatter.processFragment(stream, QMLFormatter::qffBeforeSwitch);
 
-    stream << "switch ( ";
+    stream << "switch (";
 
     if (m_pExpression != nullptr)
     {
         m_pExpression->toQML(stream, formatter, this);
     }
 
-    stream << " ) ";
+    stream << ")";
 
     formatter.processFragment(stream, QMLFormatter::qffAfterSwitch);
 
-    stream << " { ";
-
     if (m_pCases != nullptr)
     {
-        foreach (QMLEntity* pEntity, m_pCases->contents())
-        {
-            if (pEntity != nullptr)
-            {
-                QMLUnaryOperation* pUnary = dynamic_cast<QMLUnaryOperation*>(pEntity);
-
-                if (pUnary != nullptr && pUnary->oper() == QMLUnaryOperation::uoCase)
-                {
-                    pEntity->toQML(stream, formatter, this);
-                    stream << "\n";
-                }
-                else
-                {
-                    pEntity->toQML(stream, formatter, this);
-                    stream << " ";
-                }
-            }
-        }
+        m_pCases->toQML(stream, formatter, this);
     }
-
-    stream << " } ";
 }
 
 //-------------------------------------------------------------------------------------------------

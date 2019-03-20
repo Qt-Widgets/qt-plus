@@ -11,6 +11,7 @@
 #include "QMLVariableDeclaration.h"
 #include "QMLFor.h"
 #include "QMLForIn.h"
+#include "QMLComment.h"
 
 //-------------------------------------------------------------------------------------------------
 
@@ -71,6 +72,10 @@ void QMLFormatter::processFragment(QTextStream& stream, EQMLFormatterFragment fr
     switch (fragment)
     {
         case qffBeforeImport:
+        case qffBeforeForNoPreviousSibling:
+        case qffBeforeWhileNoPreviousSibling:
+        case qffBeforeSwitchNoPreviousSibling:
+        case qffBeforeIfNoPreviousSibling:
             writeNewLine(stream);
             break;
 
@@ -93,6 +98,7 @@ void QMLFormatter::processFragment(QTextStream& stream, EQMLFormatterFragment fr
             break;
 
         case qffBeforePropertyName:
+        case qffBeforeSignal:
         case qffBeforeVariableDeclaration:
         case qffBeforeFunctionCall:
         case qffBeforeTopLevelBinaryOp:
@@ -287,6 +293,28 @@ QMap<QString, QMLEntity*> QMLEntity::members()
 //-------------------------------------------------------------------------------------------------
 
 /*!
+    Returns the previous sibling of this entity if its parent is a QMLComplexEntity.
+*/
+QMLEntity* QMLEntity::previousSibling() const
+{
+    const QMLComplexEntity* pComplexParent = dynamic_cast<const QMLComplexEntity*>(parent());
+
+    if (pComplexParent != nullptr)
+    {
+        int iIndexOfThis = pComplexParent->contents().indexOf(const_cast<QMLEntity*>(this));
+
+        if (iIndexOfThis > 0 && iIndexOfThis < pComplexParent->contents().count())
+        {
+            return pComplexParent->contents()[iIndexOfThis - 1];
+        }
+    }
+
+    return nullptr;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
     Increments the usage count for this object.
 */
 void QMLEntity::incUsageCount()
@@ -376,7 +404,7 @@ void QMLEntity::solveSymbolUsages(QMLTreeContext* pContext)
 //-------------------------------------------------------------------------------------------------
 
 /*!
-    Sorts entities. \br\br
+    Sorts entities.
 */
 void QMLEntity::sortContents()
 {
@@ -522,7 +550,7 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
     CXMLNode xNode(metaObject()->className());
     QString sValue = m_vValue.value<QString>();
 
-    xNode.attributes()["Position"] = QString("<%1, %2>").arg(m_pPosition.x()).arg(m_pPosition.y());
+    xNode.attributes()["Position"] = QString("[%1, %2]").arg(m_pPosition.x()).arg(m_pPosition.y());
 
     if (sValue.isEmpty() == false)
     {
@@ -543,7 +571,7 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
     {
         xNode.attributes()["Origin"] = QString("(Class: %1, Address: %2)")
                 .arg(m_pOrigin->metaObject()->className())
-                .arg((qulonglong) m_pOrigin);
+                .arg(QString("0x") + QString::number((qulonglong) m_pOrigin, 16));
     }
 
     if (m_iUsageCount > 0)
@@ -551,9 +579,7 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
         xNode.attributes()["UsageCount"] = QString::number(m_iUsageCount);
     }
 
-    xNode.attributes()["Details"] = QString("(Class: %1, Address: %2)")
-            .arg(metaObject()->className())
-            .arg((qulonglong) this);
+    xNode.attributes()["Address"] = QString("0x") + QString::number((qulonglong) this, 16);
 
     return xNode;
 }
@@ -616,30 +642,28 @@ bool QMLEntity::isContainer(const QMLEntity* pEntity)
 
 bool QMLEntity::isPropertyAssignment(const QMLEntity* pEntity)
 {
-    if (dynamic_cast<const QMLPropertyAssignment*>(pEntity) != nullptr)
-        return true;
-
-    return false;
+    return (dynamic_cast<const QMLPropertyAssignment*>(pEntity) != nullptr);
 }
 
 //-------------------------------------------------------------------------------------------------
 
 bool QMLEntity::isVariableDeclaration(const QMLEntity* pEntity)
 {
-    if (dynamic_cast<const QMLVariableDeclaration*>(pEntity) != nullptr)
-        return true;
-
-    return false;
+    return (dynamic_cast<const QMLVariableDeclaration*>(pEntity) != nullptr);
 }
 
 //-------------------------------------------------------------------------------------------------
 
 bool QMLEntity::isFor(const QMLEntity* pEntity)
 {
-    if (dynamic_cast<const QMLFor*>(pEntity) != nullptr || dynamic_cast<const QMLForIn*>(pEntity) != nullptr)
-        return true;
+    return (dynamic_cast<const QMLFor*>(pEntity) != nullptr || dynamic_cast<const QMLForIn*>(pEntity) != nullptr);
+}
 
-    return false;
+//-------------------------------------------------------------------------------------------------
+
+bool QMLEntity::isComment(const QMLEntity* pEntity)
+{
+    return (dynamic_cast<const QMLComment*>(pEntity) != nullptr);
 }
 
 //-------------------------------------------------------------------------------------------------
