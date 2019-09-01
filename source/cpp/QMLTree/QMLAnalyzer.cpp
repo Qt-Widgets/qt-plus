@@ -388,8 +388,6 @@
 //-------------------------------------------------------------------------------------------------
 // XML Grammar File Tokens
 
-#define ANALYZER_TOKEN_MACRO            "Macro"
-#define ANALYZER_TOKEN_NAME             "Name"
 #define ANALYZER_TOKEN_CHECK            "Check"
 #define ANALYZER_TOKEN_CLASS            "Class"
 #define ANALYZER_TOKEN_LIST             "List"
@@ -401,7 +399,6 @@
 #define ANALYZER_TOKEN_REJECT           "Reject"
 #define ANALYZER_TOKEN_TEXT             "Text"
 #define ANALYZER_TOKEN_TYPE             "Type"
-#define ANALYZER_TOKEN_VALUE            "Value"
 #define ANALYZER_TOKEN_REGEXP           "RegExp"
 #define ANALYZER_TOKEN_PATH             "Path"
 #define ANALYZER_TOKEN_OPERATION        "Operation"
@@ -559,11 +556,12 @@ void QMLAnalyzer::clear()
 /*!
     Runs an analysis on the specified folder or file using \a xGrammar. Returns \c true on success.
 */
-bool QMLAnalyzer::analyze(CXMLNode xGrammar)
+bool QMLAnalyzer::analyze(const CXMLNode& xRules, const CXMLNode& xFormat)
 {
-    m_xGrammar = xGrammar;
+    m_xNewRules = xRules;
+    m_xNewFormat = xFormat;
 
-    parseMacros();
+    setGrammar(m_xNewRules);
 
     {
         QMutexLocker locker(&m_mContextMutex);
@@ -584,7 +582,7 @@ bool QMLAnalyzer::analyze(CXMLNode xGrammar)
 
     if (m_sFolder.isEmpty() == false)
     {
-        analyze_Recurse(m_sFolder);
+        analyzeRecurse(m_sFolder);
     }
     else if (m_sFile.isEmpty() == false)
     {
@@ -599,11 +597,12 @@ bool QMLAnalyzer::analyze(CXMLNode xGrammar)
 /*!
     Runs a threaded analyze on the specified folder or file using \a xGrammar. Returns \c true on success.
 */
-void QMLAnalyzer::threadedAnalyze(CXMLNode xGrammar)
+void QMLAnalyzer::threadedAnalyze(const CXMLNode& xRules, const CXMLNode& xFormat)
 {
     if (isRunning() == false)
     {
-        m_xGrammar = xGrammar;
+        m_xNewRules = xRules;
+        m_xNewFormat = xFormat;
 
         start();
     }
@@ -631,53 +630,7 @@ void QMLAnalyzer::stopThreadedAnalyze()
 */
 void QMLAnalyzer::run()
 {
-    analyze(m_xGrammar);
-}
-
-//-------------------------------------------------------------------------------------------------
-
-/*!
-    Parses all macros defined in the current grammar file.
-*/
-void QMLAnalyzer::parseMacros()
-{
-    QVector<CXMLNode> vMacros = m_xGrammar.getNodesByTagName(ANALYZER_TOKEN_MACRO);
-
-    m_mMacros.clear();
-
-    foreach (CXMLNode xMacro, vMacros)
-    {
-        QString sName = xMacro.attributes()[ANALYZER_TOKEN_NAME];
-        QString sValue = xMacro.attributes()[ANALYZER_TOKEN_VALUE];
-
-        m_mMacros[sName] = sValue;
-    }
-}
-
-//-------------------------------------------------------------------------------------------------
-
-/*!
-    Returns \a sText with macro names replaced .with their respective value.
-*/
-QString QMLAnalyzer::processMacros(const QString& sText)
-{
-    QString sResult = sText;
-
-    foreach (QString sMacro, m_mMacros.keys())
-    {
-        QString sFullMacroName = QString("$%1$").arg(sMacro);
-
-        if (sResult.contains(sFullMacroName))
-        {
-            if (m_mMacros[sMacro].count() > 0)
-            {
-                QString sMacroValue = m_mMacros[sMacro];
-                sResult.replace(sFullMacroName, sMacroValue);
-            }
-        }
-    }
-
-    return sResult;
+    analyze(m_xNewRules, m_xNewFormat);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -708,7 +661,7 @@ bool QMLAnalyzer::analyzeFile(const QString& sFileName)
 
                 pFile->sortContents();
 
-                m_pContext->writeFile(pFile);
+                m_pContext->writeFile(pFile, m_xNewFormat);
             }
         }
     }
@@ -727,7 +680,7 @@ bool QMLAnalyzer::analyzeFile(const QString& sFileName)
 /*!
     Runs an analysis on the files in \a sDirectory. Returns \c true on success.
 */
-bool QMLAnalyzer::analyze_Recurse(QString sDirectory)
+bool QMLAnalyzer::analyzeRecurse(QString sDirectory)
 {
     if (m_bStopAnalyzeRequested)
         return false;
@@ -740,7 +693,7 @@ bool QMLAnalyzer::analyze_Recurse(QString sDirectory)
     dDirectory.setFilter(QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Files);
     QStringList lFiles = dDirectory.entryList(slNameFilter);
 
-    foreach (QString sFile, lFiles)
+    for (QString sFile : lFiles)
     {
         QString sFullName = QString("%1/%2").arg(sDirectory).arg(sFile);
 
@@ -755,11 +708,11 @@ bool QMLAnalyzer::analyze_Recurse(QString sDirectory)
         dDirectory.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
         QStringList lDirectories = dDirectory.entryList();
 
-        foreach (QString sNewDirectory, lDirectories)
+        for (QString sNewDirectory : lDirectories)
         {
             QString sFullName = QString("%1/%2").arg(sDirectory).arg(sNewDirectory);
 
-            if (analyze_Recurse(sFullName) == false)
+            if (analyzeRecurse(sFullName) == false)
             {
                 return false;
             }
@@ -776,7 +729,7 @@ bool QMLAnalyzer::analyze_Recurse(QString sDirectory)
 */
 void QMLAnalyzer::runGrammar(QMLFile* pFile)
 {
-    foreach (QMLEntity* pEntity, pFile->contents())
+    for (QMLEntity* pEntity : pFile->contents())
     {
         runGrammar_Recurse(pFile, pEntity);
     }
@@ -796,9 +749,9 @@ void QMLAnalyzer::runGrammar_Recurse(QMLFile* pFile, QMLEntity* pEntity)
 
         QMap<QString, QMLEntity*> mMembers = pEntity->members();
 
-        QVector<CXMLNode> vChecks = m_xGrammar.getNodesByTagName(ANALYZER_TOKEN_CHECK);
+        QVector<CXMLNode> vChecks = grammar().getNodesByTagName(ANALYZER_TOKEN_CHECK);
 
-        foreach (CXMLNode xCheck, vChecks)
+        for (CXMLNode xCheck : vChecks)
         {
             QString sClassName = xCheck.attributes()[ANALYZER_TOKEN_CLASS];
 
@@ -807,13 +760,13 @@ void QMLAnalyzer::runGrammar_Recurse(QMLFile* pFile, QMLEntity* pEntity)
                 QVector<CXMLNode> vAccepts = xCheck.getNodesByTagName(ANALYZER_TOKEN_ACCEPT);
                 QVector<CXMLNode> vRejects = xCheck.getNodesByTagName(ANALYZER_TOKEN_REJECT);
 
-                foreach (CXMLNode xReject, vRejects)
+                for (CXMLNode xReject : vRejects)
                 {
                     if (runGrammar_Reject(pFile, sClassName, pEntity, xReject, false))
                         bHasRejects = true;
                 }
 
-                foreach (CXMLNode xAccept, vAccepts)
+                for (CXMLNode xAccept : vAccepts)
                 {
                     if (runGrammar_Reject(pFile, sClassName, pEntity, xAccept, true))
                         bHasRejects = true;
@@ -821,7 +774,7 @@ void QMLAnalyzer::runGrammar_Recurse(QMLFile* pFile, QMLEntity* pEntity)
             }
         }
 
-        foreach (QString sKey, mMembers.keys())
+        for (QString sKey : mMembers.keys())
         {
             runGrammar_Recurse(pFile, mMembers[sKey]);
         }
@@ -830,7 +783,7 @@ void QMLAnalyzer::runGrammar_Recurse(QMLFile* pFile, QMLEntity* pEntity)
 
         if (pComplex != nullptr)
         {
-            foreach (QMLEntity* pChildItem, pComplex->contents())
+            for (QMLEntity* pChildItem : pComplex->contents())
             {
                 runGrammar_Recurse(pFile, pChildItem);
             }
@@ -851,7 +804,7 @@ void QMLAnalyzer::runGrammar_Recurse(QMLFile* pFile, QMLEntity* pEntity)
 bool QMLAnalyzer::runGrammar_Reject(QMLFile* pFile, const QString& sClassName, QMLEntity* pEntity, CXMLNode xRule, bool bInverseLogic)
 {
     QString sMember = processMacros(xRule.attributes()[ANALYZER_TOKEN_MEMBER].toLower());
-    QString sValue = processMacros(xRule.attributes()[ANALYZER_TOKEN_VALUE]);
+    QString sValue = processMacros(xRule.attributes()[TOKEN_VALUE]);
     QString sType = processMacros(xRule.attributes()[ANALYZER_TOKEN_TYPE]);
     QString sText = processMacros(xRule.attributes()[ANALYZER_TOKEN_TEXT]);
     QString sNestedCount = processMacros(xRule.attributes()[ANALYZER_TOKEN_NESTED_COUNT]);
@@ -896,7 +849,7 @@ bool QMLAnalyzer::runGrammar_Reject(QMLFile* pFile, const QString& sClassName, Q
 
                 if ((unusedProperties.count() > 0) ^ bInverseLogic)
                 {
-                    foreach (QString sKey, unusedProperties.keys())
+                    for (QString sKey : unusedProperties.keys())
                     {
                         outputError(pFile->fileName(), unusedProperties[sKey]->position(), "Unreferenced property");
                     }
@@ -914,7 +867,7 @@ bool QMLAnalyzer::runGrammar_Reject(QMLFile* pFile, const QString& sClassName, Q
 
                 if ((unusedVariables.count() > 0) ^ bInverseLogic)
                 {
-                    foreach (QString sKey, unusedVariables.keys())
+                    for (QString sKey : unusedVariables.keys())
                     {
                         outputError(pFile->fileName(), unusedVariables[sKey]->position(), "Unreferenced variable");
                     }
@@ -926,7 +879,7 @@ bool QMLAnalyzer::runGrammar_Reject(QMLFile* pFile, const QString& sClassName, Q
 
                 if ((unusedParameters.count() > 0) ^ bInverseLogic)
                 {
-                    foreach (QString sKey, unusedParameters.keys())
+                    for (QString sKey : unusedParameters.keys())
                     {
                         outputError(pFile->fileName(), unusedParameters[sKey]->position(), "Unreferenced parameter");
                     }
@@ -1085,16 +1038,18 @@ bool QMLAnalyzer::runGrammar_Reject(QMLFile* pFile, const QString& sClassName, Q
 */
 bool QMLAnalyzer::runGrammar_SatisfiesConditions(QMLFile* pFile, const QString& sClassName, QMLEntity* pEntity, CXMLNode xRule)
 {
+    Q_UNUSED(sClassName);
+
     QVector<CXMLNode> vConditions = xRule.getNodesByTagName(ANALYZER_TOKEN_CONDITION);
 
     QMap<QString, QMLEntity*> mMembers = pEntity->members();
 
-    foreach (CXMLNode xCondition, vConditions)
+    for (CXMLNode xCondition : vConditions)
     {
         QString sMember = xCondition.attributes()[ANALYZER_TOKEN_MEMBER].toLower();
         QString sOperation = xCondition.attributes()[ANALYZER_TOKEN_OPERATION];
         QString sEmpty = xCondition.attributes()[ANALYZER_TOKEN_EMPTY].toLower();
-        QString sValue = xCondition.attributes()[ANALYZER_TOKEN_VALUE];
+        QString sValue = xCondition.attributes()[TOKEN_VALUE];
         QString sNegate = xCondition.attributes()[ANALYZER_TOKEN_NEGATE].toLower();
         QString sClass = xCondition.attributes()[ANALYZER_TOKEN_CLASS];
 
@@ -1222,7 +1177,7 @@ int QMLAnalyzer::runGrammar_CountNested(const QString& sClassName, QMLEntity* pE
     {
         QMap<QString, QMLEntity*> mMembers = pEntity->members();
 
-        foreach (QString sKey, mMembers.keys())
+        for (QString sKey : mMembers.keys())
         {
             int iNewCount = runGrammar_CountNested(sClassName, mMembers[sKey]);
 
@@ -1234,7 +1189,7 @@ int QMLAnalyzer::runGrammar_CountNested(const QString& sClassName, QMLEntity* pE
 
         if (pComplex != nullptr)
         {
-            foreach (QMLEntity* pChildItem, pComplex->contents())
+            for (QMLEntity* pChildItem : pComplex->contents())
             {
                 int iNewCount = runGrammar_CountNested(sClassName, pChildItem);
 
@@ -1274,7 +1229,7 @@ bool QMLAnalyzer::runGrammar_importUsed(QMLFile* pFile, QMLImport* pImport)
     dImportDirectory.setFilter(QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Files);
     QStringList lFiles = dImportDirectory.entryList(slNameFilter);
 
-    foreach (QString sFile, lFiles)
+    for (QString sFile : lFiles)
     {
         QFileInfo info(sImportDirectory + "/" + sFile);
         QString sClassName = info.baseName();
@@ -1318,7 +1273,7 @@ bool QMLAnalyzer::isClassUsed(QMLFile* pFile, QMLEntity* pEntity, const QString&
 
     QMap<QString, QMLEntity*> mMembers = pEntity->members();
 
-    foreach (QString sKey, mMembers.keys())
+    for (QString sKey : mMembers.keys())
     {
         if (isClassUsed(pFile, mMembers[sKey], sClassName))
         {
@@ -1330,7 +1285,7 @@ bool QMLAnalyzer::isClassUsed(QMLFile* pFile, QMLEntity* pEntity, const QString&
 
     if (pComplex != nullptr)
     {
-        foreach (QMLEntity* pChildItem, pComplex->contents())
+        for (QMLEntity* pChildItem : pComplex->contents())
         {
             if (isClassUsed(pFile, pChildItem, sClassName))
             {

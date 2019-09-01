@@ -28,10 +28,10 @@ public:
     //-------------------------------------------------------------------------------------------------
 
     //! Constructor
-    CDynamicHTTPServer(quint16 port, QObject* parent = 0);
+    CDynamicHTTPServer(quint16 port, QObject* parent = nullptr);
 
     //! Destructor
-    virtual ~CDynamicHTTPServer();
+    virtual ~CDynamicHTTPServer() Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Setters
@@ -48,7 +48,7 @@ public:
     //-------------------------------------------------------------------------------------------------
 
     //! Retuns a localized string
-    virtual QString getString(const QString& sToken) const;
+    virtual QString getString(const QString& sToken) const Q_DECL_OVERRIDE;
 
     //! Returns the composer of this server
     CWebComposer* composer() const;
@@ -61,7 +61,7 @@ public:
     //-------------------------------------------------------------------------------------------------
 
     //! Returns the contents of the web page
-    virtual void getContent(const CWebContext& tContext, QString& sHead, QString& sBody, QString& sCustomResponse, QString& sCustomResponseMIME) Q_DECL_OVERRIDE;
+    virtual void getContent(CWebContext& tContext, QString& sHead, QString& sBody, QString& sCustomResponse, QString& sCustomResponseMIME) Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Control methods

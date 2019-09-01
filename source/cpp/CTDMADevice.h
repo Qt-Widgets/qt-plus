@@ -35,7 +35,7 @@ public:
     CTDMADevice(QIODevice* pDevice, PTDMASerial tSeriaNumber, int iMaxBytesPerSecond = 0, bool bIsMaster = false);
 
     //! Destructor
-    virtual ~CTDMADevice();
+    virtual ~CTDMADevice() Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Setters
@@ -302,7 +302,6 @@ protected:
     int                        m_iMaxBytesPerSecond;        // Unused
     int                        m_iMaxBytesPerSlot;          // Given by master
     int                        m_iNumFramesBeforeIdent;     // For slave
-    int                        m_iNumBytesToIgnore;         // For slave
     QIODevice*                 m_pDevice;                   // IO device for data
     QTimer                     m_tTimer;
     QTimer                     m_tMaintenanceTimer;

@@ -36,7 +36,7 @@ public:
     const QVector<QString>& getReadyScriptLines() const;
 
     //-------------------------------------------------------------------------------------------------
-    // Méthodes de contrôle
+    // Control methods
     //-------------------------------------------------------------------------------------------------
 
     //! Clears all lists
@@ -112,7 +112,7 @@ private:
     CWebComposer();
 
     //! Destructor
-    virtual ~CWebComposer();
+    virtual ~CWebComposer() Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Properties

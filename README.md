@@ -2,7 +2,11 @@
 Utility classes extending Qt's functionnality.
 
 ## Classes
-The full documentation for classes is available after project build, in the <help> directory.
+The full documentation for classes is available after project build, in the help directory.
+
+Note:
+Due to qdoc changes in Qt 5.12 (i think), the help files do not compile if using a recent Qt Creator version.
+This issue is being fixed. Help may still be viewed in the related cpp file.
 
 ### QTree
 Template for a tree structure. Each node has a value and 0 or more child nodes.  
@@ -16,6 +20,8 @@ A template for a factory of objects, based on the Factory design pattern.
 
 ### CXMLNode
 A helper class that wraps the *XML* and *JSON* facilities of Qt. Makes *DOM* style documents easier to use.
+
+Attention : This class is really slow with very large documents because a lot of nodes are created and copied around...
 
 ### CLogger
 A simple yet efficient logger.
@@ -44,29 +50,39 @@ A class that can hold an NxN matrix. Used, among other things, for image filteri
 ### QMLTreeContext
 A full *QML* parser. <br>
 Holds the contents of a *QML* file in the form of a tree, made of specialized classes for each kind of *QML* and JS declarations. <br>
-* Can recreate the original *QML* file from the statement tree, **but currently throws comments away**. (To be fixed in a near future)
+* Can recreate the original *QML* file from the statement tree.
 * Can convert the statement tree to *XML*.
+* Has a known parsing problem : when using a prefix operator (like ++a)
 
 ### QMLAnalyzer
 A class that allows static analysis of a *QML* statement tree (parsed using *QMLTreeContext*).  
 Uses a grammar file in *XML* format that declares what to check and eventually reject.
 
+### CSecureContext
+A class that allows easy secure data exchange between servers and client of any kind. Based on *RSA* (copyright Nedim Srndic) and *ROKE*, a home made symetric encryption algorithm.
+
 ### CHTTPServer
 Implements the base functionalities (GET and POST) of an *HTTP* server (see RFC 7230).  
 Can do the following:
-* Handles GET and POST requests (maybe more in the future)
+* Handles *GET* and *POST* requests (maybe more in the future)
 * Serve local file ressources
 * Define the accessible folders for ressources
 * Generate dynamic *HTML* content via overridden methods.
 * More or less efficient flood protection (has not been tested on large scale)
+* No *https* for now
 
 ### CDynamicHTTPServer
 Implements the base functionalities of a web server that generates dynamic HTML content.
-A subclass of CDynamicHTTPServer may generate content in two ways:
-* Using a CWebComposer to generate HTML tags in a string
-* Using a CWebFactory to generate a CWebPage, which is a container of CWebControls
+A subclass of *CDynamicHTTPServer* may generate content in two ways:
+* Using a *CWebComposer* to generate *HTML* tags in a string
+* Using a *CWebFactory* to generate a *CWebPage*, which is a container of *CWebControls*
 
-The second method works like ASP, with a view state that enables to transfer a serialized, compressed and eventually crypted (when someone codes it) version of the CWebPage between server and client. See the documentation of CWebPage for more information.
+The second method works like *ASP*, with a view state that enables to transfer a serialized, compressed and eventually crypted (when someone wants to code it) version of the *CWebPage* between server and client.
+This method enables 
+See the documentation of *CWebPage* for more information.
+
+### CRemoteControl
+A server/client that acts somewhat like SSH on Linux. Enables remote file transfers and remote shell.
 
 ### CMJPEGClient
 A client for *MJPEG* streams. Notifies via signal whenever a new image arrives.
@@ -88,7 +104,15 @@ A template used to average values.
 ### CGeoUtilities
 Contains methods to convert from geo coordinates (latitude, longitude, altitude) to cartesian coordinates (x, y, z) and back.
 
+## QML files
+
+### ScatteredItemView.qml
+This view shows a wireframe of a QML scene. It can be rotated and zoomed. Elements can be isolated.
+
 # Third party files
 
 ## beautify.js
 Copyright (c) 2007-2017 Einar Lielmanis, Liam Newman, and contributors
+
+## Content of source/cpp/rsa
+Copyright (c) 2008 Nedim Srndic. Originally hosted on http://code.google.com/p/rsa

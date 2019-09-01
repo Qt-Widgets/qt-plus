@@ -3,6 +3,8 @@
 
 #include "../qtplus_global.h"
 
+//-------------------------------------------------------------------------------------------------
+
 // Qt
 #include <QObject>
 #include <QMutex>
@@ -32,9 +34,9 @@ public:
     CMJPEGThread(CMJPEGServer* pParent);
 
     //! Destructeur
-    virtual ~CMJPEGThread();
+    virtual ~CMJPEGThread() Q_DECL_OVERRIDE;
 
-    virtual void run();
+    virtual void run() Q_DECL_OVERRIDE;
 
 protected:
 
@@ -56,13 +58,13 @@ public:
     //-------------------------------------------------------------------------------------------------
 
     //! Default constructor
-    CMJPEGServer(int iPort);
+    CMJPEGServer(quint16 uiPort);
 
     //! File output constructor
     CMJPEGServer(QString sFileName);
 
     //! Destructor
-    virtual ~CMJPEGServer();
+    virtual ~CMJPEGServer() Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Control methods
@@ -84,13 +86,13 @@ public:
     void flush();
 
     //!
-    virtual void getContent(const CWebContext& tContext, QString& sHead, QString& sBody, QString& sCustomResponse, QString& sCustomResponseMIME) Q_DECL_OVERRIDE;
+    virtual void getContent(CWebContext& tContext, QString& sHead, QString& sBody, QString& sCustomResponse, QString& sCustomResponseMIME) Q_DECL_OVERRIDE;
 
     //!
-    virtual void handleSocketBytesWritten(QTcpSocket* pSocket, qint64 iBytes);
+    virtual void handleSocketBytesWritten(CWebContext& tContext, qint64 iBytes) Q_DECL_OVERRIDE;
 
     //!
-    virtual void handleSocketDisconnection(QTcpSocket* pSocket);
+    virtual void handleSocketDisconnection(CWebContext& tContext) Q_DECL_OVERRIDE;
 
     //-------------------------------------------------------------------------------------------------
     // Static control methods
@@ -128,13 +130,14 @@ protected:
 
 protected:
 
-    QTimer					m_tTimer;
-    QMutex					m_tMutex;
-    QString					m_sFileName;
-    QFile*					m_pOutputFile;
-    QVector<QByteArray>		m_vOutput;
-    QVector<QImage>			m_vOutputImages;
-    QVector<QTcpSocket*>	m_vSockets;
-    CMJPEGThread*			m_pThread;
-    int						m_iCompressionRate;
+    QTimer                          m_tTimer;
+    QMutex                          m_tMutex;
+    QString                         m_sFileName;
+    QFile*                          m_pOutputFile;
+    QVector<QByteArray>             m_vOutput;
+    QVector<QImage>                 m_vOutputImages;
+    QVector<QTcpSocket*>            m_vSockets;
+    QMap<QTcpSocket*, qlonglong>    m_mBytesToWrite;
+    CMJPEGThread*                   m_pThread;
+    int                             m_iCompressionRate;
 };

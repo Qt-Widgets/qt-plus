@@ -23,94 +23,6 @@
 
 //-------------------------------------------------------------------------------------------------
 
-QMLFormatter::QMLFormatter()
-    : m_iIndentation(0)
-{
-}
-
-//-------------------------------------------------------------------------------------------------
-
-void QMLFormatter::incIndentation()
-{
-    m_iIndentation++;
-}
-
-//-------------------------------------------------------------------------------------------------
-
-void QMLFormatter::decIndentation()
-{
-    m_iIndentation--;
-
-    if (m_iIndentation < 0)
-        m_iIndentation = 0;
-}
-
-//-------------------------------------------------------------------------------------------------
-
-void QMLFormatter::writeNewLine(QTextStream& stream)
-{
-    stream << "\r\n";
-
-    for (int i = 0; i < m_iIndentation * 4; i++)
-    {
-        stream << " ";
-    }
-}
-
-//-------------------------------------------------------------------------------------------------
-
-void QMLFormatter::writeDoubleNewLine(QTextStream& stream)
-{
-    stream << "\r\n";
-    writeNewLine(stream);
-}
-
-//-------------------------------------------------------------------------------------------------
-
-void QMLFormatter::processFragment(QTextStream& stream, EQMLFormatterFragment fragment)
-{
-    switch (fragment)
-    {
-        case qffBeforeImport:
-        case qffBeforeForNoPreviousSibling:
-        case qffBeforeWhileNoPreviousSibling:
-        case qffBeforeSwitchNoPreviousSibling:
-        case qffBeforeIfNoPreviousSibling:
-            writeNewLine(stream);
-            break;
-
-        case qffBeforeItemName:
-        case qffBeforeFunction:
-        case qffBeforeFor:
-        case qffBeforeWhile:
-        case qffBeforeSwitch:
-        case qffBeforeIf:
-            writeDoubleNewLine(stream);
-            break;
-
-        case qffBeforeItemContent:
-            incIndentation();
-            break;
-
-        case qffAfterItemContent:
-            decIndentation();
-            writeNewLine(stream);
-            break;
-
-        case qffBeforePropertyName:
-        case qffBeforeSignal:
-        case qffBeforeVariableDeclaration:
-        case qffBeforeFunctionCall:
-        case qffBeforeTopLevelBinaryOp:
-        case qffBeforeTopLevelUnaryOp:
-        case qffBeforeQualifiedExpression:
-            writeNewLine(stream);
-            break;
-    }
-}
-
-//-------------------------------------------------------------------------------------------------
-
 QList<QMLEntity*> QMLEntity::s_vEntities;
 int QMLEntity::s_iCreatedEntities = 0;
 int QMLEntity::s_iDeletedEntities = 0;
@@ -351,7 +263,7 @@ void QMLEntity::solveSymbols(QMLTreeContext* pContext)
 {
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
@@ -372,7 +284,7 @@ void QMLEntity::solveReferences(QMLTreeContext* pContext)
 {
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
@@ -392,7 +304,7 @@ void QMLEntity::solveSymbolUsages(QMLTreeContext* pContext)
 {
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
@@ -410,7 +322,7 @@ void QMLEntity::sortContents()
 {
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
@@ -431,13 +343,13 @@ QMap<QString, QMLEntity*> QMLEntity::getDeclaredSymbols()
 
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
             QMap<QString, QMLEntity*> memberSymbols = mMembers[sMemberKey]->getDeclaredSymbols();
 
-            foreach (QString sSymbolKey, memberSymbols.keys())
+            for (QString sSymbolKey : memberSymbols.keys())
             {
                 if (mReturnValue.contains(sSymbolKey) == false)
                 {
@@ -489,7 +401,7 @@ void QMLEntity::removeUnreferencedSymbols(QMLTreeContext* pContext)
 {
     QMap<QString, QMLEntity*> mMembers = members();
 
-    foreach (QString sMemberKey, mMembers.keys())
+    for (QString sMemberKey : mMembers.keys())
     {
         if (mMembers[sMemberKey] != nullptr)
         {
@@ -506,6 +418,7 @@ void QMLEntity::removeUnreferencedSymbols(QMLTreeContext* pContext)
 */
 void QMLEntity::toQML(QTextStream& stream, QMLFormatter& formatter, const QMLEntity* pParent) const
 {
+    Q_UNUSED(formatter);
     Q_UNUSED(pParent);
 
     QString sValue;
@@ -547,6 +460,9 @@ void QMLEntity::toQML(QTextStream& stream, QMLFormatter& formatter, const QMLEnt
 */
 CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent)
 {
+    Q_UNUSED(pContext);
+    Q_UNUSED(pParent);
+
     CXMLNode xNode(metaObject()->className());
     QString sValue = m_vValue.value<QString>();
 
@@ -571,7 +487,7 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
     {
         xNode.attributes()["Origin"] = QString("(Class: %1, Address: %2)")
                 .arg(m_pOrigin->metaObject()->className())
-                .arg(QString("0x") + QString::number((qulonglong) m_pOrigin, 16));
+                .arg(QString("0x") + QString::number(qulonglong(m_pOrigin), 16));
     }
 
     if (m_iUsageCount > 0)
@@ -579,7 +495,7 @@ CXMLNode QMLEntity::toXMLNode(CXMLNodableContext* pContext, CXMLNodable* pParent
         xNode.attributes()["UsageCount"] = QString::number(m_iUsageCount);
     }
 
-    xNode.attributes()["Address"] = QString("0x") + QString::number((qulonglong) this, 16);
+    xNode.attributes()["Address"] = QString("0x") + QString::number(qulonglong(this), 16);
 
     return xNode;
 }
@@ -603,7 +519,7 @@ QString QMLEntity::listAsQualifiedName(const QStringList& sNameList)
 {
     QString sReturnValue;
 
-    foreach (QString sName, sNameList)
+    for (QString sName : sNameList)
     {
         if (sReturnValue.isEmpty() == false)
         {

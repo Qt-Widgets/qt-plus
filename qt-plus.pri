@@ -1,6 +1,7 @@
 
 HEADERS += \
     source/cpp/qtplus_global.h \
+    source/cpp/Macros.h \
     source/cpp/CFactory.h \
     source/cpp/CSingleton.h \
     source/cpp/CSingletonPool.h \
@@ -11,6 +12,7 @@ HEADERS += \
     source/cpp/CPIDController.h \
     source/cpp/CAverager.h \
     source/cpp/CLogger.h \
+    source/cpp/CMacroable.h \
     source/cpp/CTracableMutex.h \
     source/cpp/CTimeSampler.h \
     source/cpp/CMemoryMonitor.h \
@@ -18,17 +20,22 @@ HEADERS += \
     source/cpp/Image/CImageHistogram.h \
     source/cpp/Image/CImageUtilities.h \
     source/cpp/CSoundSynth.h \
+    source/cpp/CSecureContext.h \
     source/cpp/CTDMADevice.h \
     source/cpp/CStreamFactory.h \
     source/cpp/CConnectedStream.h \
     source/cpp/CSocketStream.h \
     source/cpp/CSerialStream.h \
     source/cpp/File/CRollingFiles.h \
+    source/cpp/RemoteControl/CRemoteControl.h \
+    source/cpp/RemoteControl/CRemoteControlData.h \
+    source/cpp/RemoteControl/CRemoteControlUser.h \
     source/cpp/Web/CMJPEGClient.h \
     source/cpp/Web/CMJPEGServer.h \
     source/cpp/Web/CWebComposer.h \
     source/cpp/Web/CWebContext.h \
     source/cpp/Web/CHTTPServer.h \
+    source/cpp/Web/CHTTPRequestProcessor.h \
     source/cpp/Web/CDynamicHTTPServer.h \
     source/cpp/Web/WebControls/CWebButton.h \
     source/cpp/Web/WebControls/CWebControl.h \
@@ -54,6 +61,7 @@ HEADERS += \
     source/cpp/GeoTools/UtmMgrs.h \
     source/cpp/GeoTools/geotrans.h \
     source/cpp/CGeoUtilities.h \
+    source/cpp/QMLTree/QMLFormatter.h \
     source/cpp/QMLTree/QMLEntity.h \
     source/cpp/QMLTree/QMLComplexEntity.h \
     source/cpp/QMLTree/QMLNameValue.h \
@@ -83,7 +91,13 @@ HEADERS += \
     source/cpp/QMLTree/QMLConditional.h \
     source/cpp/QMLTree/QMLComment.h \
     source/cpp/QMLTree/QMLTreeContext.h \
-    source/cpp/QMLTree/QMLAnalyzer.h
+    source/cpp/QMLTree/QMLAnalyzer.h \
+    source/cpp/rsa/source/BigInt.h \
+    source/cpp/rsa/source/Key.h \
+    source/cpp/rsa/source/KeyPair.h \
+    source/cpp/rsa/source/PrimeGenerator.h \
+    source/cpp/rsa/source/RSA.h \
+    source/cpp/roke/ROKE.h
 
 SOURCES += \
     source/cpp/CSingletonPool.cpp \
@@ -92,6 +106,7 @@ SOURCES += \
     source/cpp/CXMLNode.cpp \
     source/cpp/CPIDController.cpp \
     source/cpp/CLogger.cpp \
+    source/cpp/CMacroable.cpp \
     source/cpp/CTracableMutex.cpp \
     source/cpp/CTimeSampler.cpp \
     source/cpp/CMemoryMonitor.cpp \
@@ -99,17 +114,22 @@ SOURCES += \
     source/cpp/Image/CImageHistogram.cpp \
     source/cpp/Image/CImageUtilities.cpp \
     source/cpp/CSoundSynth.cpp \
+    source/cpp/CSecureContext.cpp \
     source/cpp/CTDMADevice.cpp \
     source/cpp/CStreamFactory.cpp \
     source/cpp/CConnectedStream.cpp \
     source/cpp/CSocketStream.cpp \
     source/cpp/CSerialStream.cpp \
     source/cpp/File/CRollingFiles.cpp \
+    source/cpp/RemoteControl/CRemoteControl.cpp \
+    source/cpp/RemoteControl/CRemoteControlData.cpp \
+    source/cpp/RemoteControl/CRemoteControlUser.cpp \
     source/cpp/Web/CMJPEGClient.cpp \
     source/cpp/Web/CMJPEGServer.cpp \
     source/cpp/Web/CWebComposer.cpp \
     source/cpp/Web/CWebContext.cpp \
     source/cpp/Web/CHTTPServer.cpp \
+    source/cpp/Web/CHTTPRequestProcessor.cpp \
     source/cpp/Web/CDynamicHTTPServer.cpp \
     source/cpp/Web/WebControls/CWebButton.cpp \
     source/cpp/Web/WebControls/CWebControl.cpp \
@@ -133,6 +153,7 @@ SOURCES += \
     source/cpp/GeoTools/UtmMgrs.cpp \
     source/cpp/GeoTools/geotrans.cpp \
     source/cpp/CGeoUtilities.cpp \
+    source/cpp/QMLTree/QMLFormatter.cpp \
     source/cpp/QMLTree/QMLEntity.cpp \
     source/cpp/QMLTree/QMLComplexEntity.cpp \
     source/cpp/QMLTree/QMLNameValue.cpp \
@@ -163,7 +184,13 @@ SOURCES += \
     source/cpp/QMLTree/QMLComment.cpp \
     source/cpp/QMLTree/QMLTreeContext.cpp \
     source/cpp/QMLTree/QMLGrammarParser.cpp \
-    source/cpp/QMLTree/QMLAnalyzer.cpp
+    source/cpp/QMLTree/QMLAnalyzer.cpp \
+    source/cpp/rsa/source/BigInt.cpp \
+    source/cpp/rsa/source/Key.cpp \
+    source/cpp/rsa/source/KeyPair.cpp \
+    source/cpp/rsa/source/PrimeGenerator.cpp \
+    source/cpp/rsa/source/RSA.cpp \
+    source/cpp/roke/ROKE.cpp
 
 RESOURCES += \
     resources.qrc

@@ -97,7 +97,7 @@ CWebControl* CWebPage::instantiator()
 CWebPage::CWebPage()
     : m_bDeserialized(false)
 {
-    m_sPropertyChanges.append(QString("var newElement;"HTML_NL));
+    m_sPropertyChanges.append(QString("var newElement;" HTML_NL));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ CWebPage::CWebPage(const QString& sName)
     : CWebControl(sName, "")
     , m_bDeserialized(false)
 {
-    m_sPropertyChanges.append(QString("var newElement;"HTML_NL));
+    m_sPropertyChanges.append(QString("var newElement;" HTML_NL));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -156,14 +156,14 @@ void CWebPage::getContent(CDynamicHTTPServer* pServer, const CWebContext& tConte
     Q_UNUSED(tContext);
     Q_UNUSED(xmlResponse);
 
-    sHead += QString("<meta charset=\"UTF-8\">"HTML_NL);
+    sHead += QString("<meta charset=\"UTF-8\">" HTML_NL);
 
-    foreach (QString sFileName, pServer->composer()->getCSSFiles())
+    for (QString sFileName : pServer->composer()->getCSSFiles())
     {
         pServer->composer()->addCSSFileStatement(sHead, sFileName);
     }
 
-    foreach (QString sFileName, pServer->composer()->getJSFiles())
+    for (QString sFileName : pServer->composer()->getJSFiles())
     {
         pServer->composer()->addJSFileStatement(sHead, sFileName);
     }
@@ -171,18 +171,18 @@ void CWebPage::getContent(CDynamicHTTPServer* pServer, const CWebContext& tConte
     addHTML(sHead, sBody);
 
     sHead += QString(
-                "<script type='text/javascript' language='javascript'>"HTML_NL
-                "window.onload = function()"HTML_NL
-                "{"HTML_NL
+                "<script type='text/javascript' language='javascript'>" HTML_NL
+                "window.onload = function()" HTML_NL
+                "{" HTML_NL
                 );
 
     sHead += m_sPropertyChanges;
 
-    sHead += "document.viewstate='" + getViewState(pServer) + "';"HTML_NL;
+    sHead += "document.viewstate='" + getViewState(pServer) + "';" HTML_NL;
 
     sHead += QString(
-                "};"HTML_NL
-                "</script>"HTML_NL
+                "};" HTML_NL
+                "</script>" HTML_NL
                 );
 }
 
@@ -195,7 +195,7 @@ void CWebPage::locationModified(const QString& sPropertyValue)
 {
     m_sPropertyChanges.append(
                 QString(
-                    "document.location = '%1';"HTML_NL
+                    "document.location = '%1';" HTML_NL
                     )
                 .arg(sPropertyValue)
                 );
@@ -210,7 +210,7 @@ void CWebPage::propertyModified(const QString& sID, const QString& sPropertyName
 {
     m_sPropertyChanges.append(
                 QString(
-                    "document.getElementById('%1').%2='%3';"HTML_NL
+                    "document.getElementById('%1').%2='%3';" HTML_NL
                     )
                 .arg(sID)
                 .arg(sPropertyName)
@@ -237,7 +237,7 @@ void CWebPage::controlAdded(const QString& sID, CWebControl* pChildControl)
 
         m_sPropertyChanges.append(
                     QString(
-                        "document.getElementById('%2').appendChild(htmlToElement(\"%1\"));"HTML_NL
+                        "document.getElementById('%2').appendChild(htmlToElement(\"%1\"));" HTML_NL
                         )
                     .arg(sBody)
                     .arg(sID)
@@ -256,7 +256,7 @@ void CWebPage::controlDeleted(const QString& sID, const QString& sChildID)
     {
         m_sPropertyChanges.append(
                     QString(
-                        "document.getElementById('%1').removeChild(%2);"HTML_NL
+                        "document.getElementById('%1').removeChild(%2);" HTML_NL
                         )
                     .arg(sID)
                     .arg(sChildID)
@@ -283,7 +283,7 @@ void CWebPage::scriptCall(const QString& sScript)
 void CWebPage::setViewstate(const QString& sViewState)
 {
     m_sPropertyChanges.append(
-                QString("document.viewstate = '%1';"HTML_NL)
+                QString("document.viewstate = '%1';" HTML_NL)
                 .arg(sViewState)
                 );
 }
@@ -299,9 +299,9 @@ void CWebPage::addHTML(QString& sHead, QString& sBody)
                 "<script type='text/javascript' language='javascript'>%1"
                 "function htmlToElement(html)%1"
                 "{%1"
-                "   var template = document.createElement('template');%1"
-                "   template.innerHTML = html;%1"
-                "   return template.content.firstChild;%1"
+                "  var template = document.createElement('template');%1"
+                "  template.innerHTML = html;%1"
+                "  return template.content.firstChild;%1"
                 "}%1"
                 "function httpWebEvent(theUrl)%1"
                 "{%1"
@@ -365,7 +365,8 @@ void CWebPage::addHTML(QString& sHead, QString& sBody)
                 "function processRequestReturnValue(value)%1"
                 "{%1"
                 "  debugOut(value);%1"
-                "  if (value != 'VOID') eval(value);%1"
+                "  if (value != '%10')%1"
+                "    eval(value);%1"
                 "}%1"
                 "function debugOut(text)%1"
                 "{%1"
@@ -381,12 +382,13 @@ void CWebPage::addHTML(QString& sHead, QString& sBody)
             .arg(TOKEN_VIEWSTATE)
             .arg(TOKEN_UPLOAD)
             .arg(HTTP_GET)
-            .arg(HTTP_POST);
+            .arg(HTTP_POST)
+            .arg(INVALID_RESPONSE_STRING);
 
     // Debug out
-    // sBody.append(QString("<div width='100%' style='div1'><textarea id='DebugOut'></textarea></div>"HTML_NL));
+    // sBody.append(QString("<div width='100%' style='div1'><textarea id='DebugOut'></textarea></div>" HTML_NL));
 
-    foreach (CWebControl* pControl, m_vControls)
+    for (CWebControl* pControl : m_vControls)
     {
         pControl->addHTML(sHead, sBody);
     }
