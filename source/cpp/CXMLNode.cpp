@@ -17,6 +17,7 @@
 //-------------------------------------------------------------------------------------------------
 
 QString const CXMLNode::sExtension_XML = ".xml";
+QString const CXMLNode::sExtension_XMLC = ".xmlc";
 QString const CXMLNode::sExtension_QRC = ".qrc";
 QString const CXMLNode::sExtension_JSON = ".json";
 
@@ -36,15 +37,6 @@ CXMLNode::CXMLNode()
 */
 CXMLNode::CXMLNode(const QString& sTagName)
     : m_sTag(sTagName)
-{
-}
-
-//-------------------------------------------------------------------------------------------------
-
-/*!
-    Destroys a CXMLNode.
-*/
-CXMLNode::~CXMLNode()
 {
 }
 
@@ -123,7 +115,7 @@ QMap<QString, QString>& CXMLNode::attributes()
 /*!
     Returns a constant vector of this node's children.
 */
-const QVector<CXMLNode>& CXMLNode::nodes() const
+const CXMLNodeList &CXMLNode::nodes() const
 {
     return m_vNodes;
 }
@@ -133,7 +125,7 @@ const QVector<CXMLNode>& CXMLNode::nodes() const
 /*!
     Returns a vector of this node's children.
 */
-QVector<CXMLNode>& CXMLNode::nodes()
+CXMLNodeList& CXMLNode::nodes()
 {
     return m_vNodes;
 }
@@ -148,6 +140,10 @@ CXMLNode CXMLNode::load(const QString& sFileName)
     if (sFileName.toLower().endsWith(sExtension_XML))
     {
         return loadXMLFromFile(sFileName);
+    }
+    if (sFileName.toLower().endsWith(sExtension_XMLC))
+    {
+        return loadXMLCFromFile(sFileName);
     }
     else if (sFileName.toLower().endsWith(sExtension_JSON))
     {
@@ -175,6 +171,10 @@ bool CXMLNode::save(const QString& sFileName)
     {
         return saveXMLToFile(sFileName);
     }
+    else if (sLowerFileName.endsWith(sExtension_XMLC))
+    {
+        return saveXMLCToFile(sFileName);
+    }
     else if (sLowerFileName.endsWith(sExtension_JSON))
     {
         return saveJSONToFile(sFileName);
@@ -200,6 +200,31 @@ CXMLNode CXMLNode::loadXMLFromFile(const QString& sFileName)
             xmlFile.close();
 
             return parseXML(sText);
+        }
+    }
+
+    return CXMLNode();
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
+    Returns a CXMLNode hierarchy loaded from the compressed XML file named \a sFileName.
+*/
+CXMLNode CXMLNode::loadXMLCFromFile(const QString& sFileName)
+{
+    QFile xmlFile(sFileName);
+
+    // toto
+
+    if (xmlFile.exists())
+    {
+        if (xmlFile.open(QIODevice::ReadOnly))
+        {
+            QByteArray baData = xmlFile.readAll();
+            xmlFile.close();
+
+            return parseXML(QString(qUncompress(baData)));
         }
     }
 
@@ -317,7 +342,7 @@ CXMLNode CXMLNode::parseJSONNode(QJsonObject jObject, QString sTagName)
         }
         else if (jObject[sKey].isArray())
         {
-            QVector<CXMLNode> vNodes = parseJSONArray(jObject[sKey].toArray(), sKey);
+            CXMLNodeList vNodes = parseJSONArray(jObject[sKey].toArray(), sKey);
 
             for(CXMLNode xNode : vNodes)
             {
@@ -338,9 +363,9 @@ CXMLNode CXMLNode::parseJSONNode(QJsonObject jObject, QString sTagName)
 /*!
     Returns a list of CXMLNode that is parsed from \a jArray, using \a sTagName as a tag name.
 */
-QVector<CXMLNode> CXMLNode::parseJSONArray(QJsonArray jArray, QString sTagName)
+CXMLNodeList CXMLNode::parseJSONArray(QJsonArray jArray, QString sTagName)
 {
-    QVector<CXMLNode> vNodes;
+    CXMLNodeList vNodes;
 
     for (int iIndex = 0; iIndex < jArray.count(); iIndex++)
     {
@@ -486,7 +511,7 @@ QJsonObject CXMLNode::toJsonObject() const
 
     for (QString sTag : sTagList)
     {
-        QVector<CXMLNode> vNodes = getNodesByTagName(sTag);
+        CXMLNodeList vNodes = getNodesByTagName(sTag);
 
         if (vNodes.count() > 1)
         {
@@ -533,6 +558,29 @@ bool CXMLNode::saveXMLToFile(const QString& sFileName, bool bXMLHeader)
 //-------------------------------------------------------------------------------------------------
 
 /*!
+    Saves this CXMLNode tree as compressed XML in the file named \a sFileName. \br
+    If \a bXMLHeader is \c true, the xml file will contain a header of the type <?xml version="1.0" encoding="UTF-8"?> \br
+    Returns \c true if successful, \c false otherwise.
+*/
+bool CXMLNode::saveXMLCToFile(const QString& sFileName, bool bXMLHeader)
+{
+    QFile xmlFile(sFileName);
+    QByteArray baData = qCompress(toString(bXMLHeader).toUtf8(), 8);
+
+    if (xmlFile.open(QIODevice::WriteOnly))
+    {
+        xmlFile.write(baData);
+        xmlFile.close();
+
+        return true;
+    }
+
+    return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
     Saves this CXMLNode tree as JSON in the file named \a sFileName. \br
     Returns \c true if successful, \c false otherwise.
 */
@@ -560,6 +608,21 @@ CXMLNode& CXMLNode::operator << (CXMLNode value)
 {
     m_vNodes << value;
     return *this;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+
+/*!
+    Returns \c true if this node is equal to \a value.
+*/
+bool CXMLNode::operator == (const CXMLNode& value) const
+{
+    return
+            m_sTag == value.m_sTag &&
+            m_sValue == value.m_sValue &&
+            m_vAttributes == value.m_vAttributes &&
+            m_vNodes == value.m_vNodes;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -597,9 +660,9 @@ CXMLNode CXMLNode::getNodeByTagName(const QString& sTagName) const
 /*!
     Returns a list of child nodes whose tag is \a sTagName.
 */
-QVector<CXMLNode> CXMLNode::getNodesByTagName(const QString& sTagName) const
+CXMLNodeList CXMLNode::getNodesByTagName(const QString& sTagName) const
 {
-    QVector<CXMLNode> vNodes;
+    CXMLNodeList vNodes;
 
     for (const CXMLNode& tNode : m_vNodes)
     {
